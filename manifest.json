@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Your Chrome Extension Name",
+  "name": "Text Extractor",
   "version": "0.1",
-  "author": "First Last",
-  "description": "A description about your Chrome Extension...",
+  "author": "Om Dabhade",
+  "description": "Extract text from the video's particular frame",
   "permissions": [
-    ""
+    "storage",
+    "tabs"
   ],
   "content_scripts": [
     {
@@ -20,19 +21,27 @@
   "background": {
     "service_worker": "background.js"
   },
-  "web_accessible_resources" : [
+  "web_accessible_resources": [
     {
-      "resources": [],
-      "matches" : ["<all_urls>"]
+      "resources": [
+        "assets/*",
+        "vendor/*",
+        "vendor/core/*",
+        "traineddata/*"
+      ],
+      "matches": ["<all_urls>"]
     }
   ],
   "action": {
     "default_icon": {
-      "16": "logo.png",
-      "24": "logo.png",
-      "32": "logo.png"
+      "16": "assets/logo.png",
+      "24": "assets/logo.png",
+      "32": "assets/logo.png"
     },
-    "default_popup": "index.html",
-    "default_title": "A tooltip popup description when you hover over the Chrome Extension icon."
+    "default_popup": "popup.html",
+    "default_title": "Text Extractor"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   }
 }
