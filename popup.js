@@ -31,11 +31,11 @@ processBtn.addEventListener('click', async () => {
 
         // Create worker with offline configuration
         const worker = await Tesseract.createWorker('eng', '3', {
-            workerBlobURL: false,
+            workerBlobURL: false, //workerBlobURL: false = "Use my local worker file, don't create a blob that tries to access the internet"
             corePath: chrome.runtime.getURL('vendor/core'),
             workerPath: chrome.runtime.getURL('vendor/worker.min.js'),
             langPath: chrome.runtime.getURL('traineddata/'),
-            logger: function(m) {
+            logger: function(m) { //inbuilt tesseract logger
                 console.log('Tesseract Logger:', m);
                 
                 if (m.status) {

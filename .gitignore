@@ -13,3 +13,5 @@ build/
 .env.local
 
 learnings.txt
+
+popup_initial_with_comments.js
