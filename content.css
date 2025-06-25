@@ -1,0 +1,108 @@
+/* Draggable OCR Button Styles */
+.draggable-ocr-btn {
+    position: fixed !important;
+    z-index: 2147483647 !important;
+    
+    /* Button styling */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 8px 12px !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    
+    /* Layout */
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 75px !important;
+    
+    /* Interaction */
+    cursor: grab !important;
+    user-select: none !important;
+    
+    /* Visual effects */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    transition: all 0.3s ease !important;
+    
+    /* Ensure visibility */
+    opacity: 0.9 !important;
+    pointer-events: auto !important;
+}
+
+.draggable-ocr-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+    opacity: 1 !important;
+}
+
+.draggable-ocr-btn.dragging {
+    cursor: grabbing !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important;
+}
+
+/* Button elements */
+.btn-icon {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+.btn-text {
+    font-size: 12px !important;
+    font-weight: bold !important;
+    line-height: 1 !important;
+}
+
+.drag-handle {
+    font-size: 8px !important;
+    opacity: 0.6 !important;
+    margin-left: 2px !important;
+    letter-spacing: -1px !important;
+    line-height: 1 !important;
+}
+
+/* Notification */
+.ocr-notification {
+    position: fixed !important;
+    top: 70px !important;
+    right: 20px !important;
+    background: white !important;
+    color: #333 !important;
+    padding: 12px 20px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    z-index: 2147483647 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 13px !important;
+    max-width: 280px !important;
+    border-left: 4px solid #667eea !important;
+    animation: slideIn 0.3s ease-out !important;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%) !important;
+        opacity: 0 !important;
+    }
+    to {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .draggable-ocr-btn {
+        padding: 10px 14px !important;
+        min-width: 85px !important;
+    }
+    
+    .btn-icon {
+        font-size: 18px !important;
+    }
+    
+    .btn-text {
+        font-size: 13px !important;
+    }
+}

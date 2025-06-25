@@ -6,7 +6,8 @@
   "description": "Extract text from the video's particular frame",
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "activeTab"
   ],
   "content_scripts": [
     {
@@ -15,6 +16,9 @@
       ],
       "js": [
         "content.js"
+      ],
+      "css": [
+        "content.css"
       ]
     }
   ],
@@ -29,7 +33,9 @@
         "vendor/core/*",
         "traineddata/*"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "action": {
