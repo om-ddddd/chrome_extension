@@ -8,6 +8,7 @@ let textList;
 let emptyState;
 let clearBtn;
 let screenshots = [];
+let isUserEditing = false;
 
 /**
  * Initialize the popup when DOM is ready
@@ -89,6 +90,11 @@ function listenForUpdates() {
  * Update the display with extracted text
  */
 function updateDisplay() {
+    // Don't update display if user is currently editing
+    if (isUserEditing) {
+        return;
+    }
+    
     // Filter screenshots that have extracted text
     const textsWithContent = screenshots.filter(s => s.extractedText && s.extractedText.trim());
     
@@ -99,6 +105,8 @@ function updateDisplay() {
     } else {
         emptyState.style.display = 'none';
         textList.style.display = 'block';
+        
+        // Simple render without focus restoration to prevent loops
         renderTexts(textsWithContent);
     }
 }
@@ -149,10 +157,58 @@ function createTextElement(screenshot, index) {
     saveBtn.addEventListener('click', () => downloadText(screenshot.extractedText, `text-${screenshot.id}.txt`));
     deleteBtn.addEventListener('click', () => deleteText(screenshot.id));
     
-    // Auto-save when text is changed
+    // Auto-save when text is changed with debouncing
+    let saveTimeout;
     textArea.addEventListener('input', (e) => {
         const newText = e.target.value;
+        
+        // Set editing flag to prevent re-renders
+        isUserEditing = true;
+        
+        // Update local data immediately to prevent re-rendering
+        screenshot.extractedText = newText;
+        
+        // Clear previous timeout
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+        }
+        
+        // Debounce the save operation to prevent excessive calls
+        saveTimeout = setTimeout(() => {
+            updateScreenshotText(screenshot.id, newText);
+            isUserEditing = false;
+        }, 1000); // Increased to 1 second
+    });
+    
+    // Prevent re-renders during focus/interaction
+    textArea.addEventListener('focus', () => {
+        isUserEditing = true;
+    });
+    
+    // Prevent re-renders during scrolling
+    textArea.addEventListener('scroll', () => {
+        isUserEditing = true;
+        // Reset after a short delay
+        setTimeout(() => {
+            // Only reset if not actively typing
+            if (saveTimeout === undefined) {
+                isUserEditing = false;
+            }
+        }, 200);
+    });
+    
+    // Also save on blur (when user clicks outside)
+    textArea.addEventListener('blur', (e) => {
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = undefined;
+        }
+        const newText = e.target.value;
         updateScreenshotText(screenshot.id, newText);
+        // Delay resetting to prevent immediate re-renders
+        setTimeout(() => {
+            isUserEditing = false;
+        }, 300);
     });
     
     return div;
@@ -163,17 +219,13 @@ function createTextElement(screenshot, index) {
  */
 async function updateScreenshotText(id, newText) {
     try {
+        // Save to background script (local data already updated)
         await chrome.runtime.sendMessage({
             action: 'updateScreenshotText',
             id: id,
             extractedText: newText
         });
         
-        // Update local data
-        const screenshot = screenshots.find(s => s.id === id);
-        if (screenshot) {
-            screenshot.extractedText = newText;
-        }
     } catch (error) {
         console.error('Failed to update text:', error);
     }
@@ -308,7 +360,10 @@ async function saveExtractedText(id, text) {
         const screenshot = screenshots.find(s => s.id === id);
         if (screenshot) {
             screenshot.extractedText = text;
-            updateDisplay();
+            // Only update display if no user is currently editing
+            if (!isUserEditing) {
+                updateDisplay();
+            }
         }
     } catch (error) {
         console.error('Failed to save extracted text:', error);
