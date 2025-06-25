@@ -3,33 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text Extractor - Extracted Text</title>
+    <title>Text Clipboard</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <div class="header">
-        <h1>📝 Extracted Text</h1>
-        <button id="clearBtn" class="clear-btn" title="Clear all text">🗑️</button>
+        <h1>� Text Clipboard</h1>
+        <button id="clearBtn" class="clear-btn" title="Clear all text">🗑️ Clear</button>
     </div>
     
-    <div class="instructions">
-        <p>💡 <strong>How to use:</strong></p>
-        <p>• Click the <span class="highlight">📝 OCR</span> button on any webpage</p>
-        <p>• Select an area to capture text</p>
-        <p>• View extracted text below</p>
+    <div id="textList" class="text-list">
+        <!-- Extracted text will be dynamically loaded here -->
     </div>
     
-    <div class="text-container">
-        <div id="textCount" class="count">No text extracted yet</div>
-        <div id="textList" class="text-list">
-            <!-- Extracted text will be dynamically loaded here -->
-        </div>
-        
-        <div id="emptyState" class="empty-state">
-            <div class="empty-icon">📝</div>
-            <p>No text extracted yet</p>
-            <p>Use the OCR button on any webpage to start extracting text!</p>
-        </div>
+    <div id="emptyState" class="empty-state">
+        <div class="empty-icon">�</div>
+        <h3>No text extracted yet</h3>
+        <p>Use the OCR button on any webpage to extract text from images and screenshots!</p>
     </div>
 
     <script src="vendor/tesseract.min.js"></script>
