@@ -3,51 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text Extractor - OCR</title>
+    <title>Text Extractor - Extracted Text</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <h1>🔍 Text Extractor</h1>
-
-    <div class="form-group">
-        <label for="imageInput">📁 Select Image:</label>
-        <input type="file" id="imageInput" accept="image/*">
+    <div class="header">
+        <h1>📝 Extracted Text</h1>
+        <button id="clearBtn" class="clear-btn" title="Clear all text">🗑️</button>
     </div>
     
-    <div class="form-group">
-        <label for="oem">⚙️ OCR Engine Mode:</label>
-        <select id="oem">
-            <option value="3">Default (Recommended)</option>
-            <option value="1">Neural nets LSTM only</option>
-            <option value="0">Legacy engine only</option>
-            <option value="2">Legacy + LSTM engines</option>
-        </select>
+    <div class="instructions">
+        <p>💡 <strong>How to use:</strong></p>
+        <p>• Click the <span class="highlight">📝 OCR</span> button on any webpage</p>
+        <p>• Select an area to capture text</p>
+        <p>• View extracted text below</p>
     </div>
-
-    <div class="form-group">
-        <label for="psm">📄 Page Segmentation Mode:</label>
-        <select id="psm">
-            <option value="0">Orientation and script detection only</option>
-            <option value="1">Automatic page segmentation with OSD</option>
-            <option value="2">Automatic page segmentation, no OSD</option>
-            <option value="3" selected>Fully automatic (Default)</option>
-            <option value="4">Single column of variable sizes</option>
-            <option value="5">Single uniform block (vertical)</option>
-            <option value="6">Single uniform block</option>
-            <option value="7">Single text line</option>
-            <option value="8">Single word</option>
-            <option value="9">Single word in circle</option>
-            <option value="10">Single character</option>
-            <option value="11">Sparse text (any order)</option>
-            <option value="12">Sparse text with OSD</option>
-            <option value="13">Raw line</option>
-        </select>
-    </div>
-
-    <button id="processBtn">🚀 Extract Text</button>
     
-    <h2>📝 Extracted Text:</h2>
-    <div id="result">Select an image and click "Extract Text" to begin...</div>
+    <div class="text-container">
+        <div id="textCount" class="count">No text extracted yet</div>
+        <div id="textList" class="text-list">
+            <!-- Extracted text will be dynamically loaded here -->
+        </div>
+        
+        <div id="emptyState" class="empty-state">
+            <div class="empty-icon">📝</div>
+            <p>No text extracted yet</p>
+            <p>Use the OCR button on any webpage to start extracting text!</p>
+        </div>
+    </div>
 
     <script src="vendor/tesseract.min.js"></script>
     <script src="popup.js"></script>
