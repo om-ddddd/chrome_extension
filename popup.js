@@ -45,22 +45,20 @@ function setupEventListeners() {
  */
 async function loadScreenshots() {
     try {
-        const response = await chrome.runtime.sendMessage({
-            action: 'getScreenshots'
-        });
+        // Load directly from Chrome storage instead of background script
+        const result = await chrome.storage.local.get(['screenshots']);
+        screenshots = result.screenshots || [];
         
-        if (response && response.screenshots) {
-            screenshots = response.screenshots;
-            
-            // Auto-extract text from screenshots that don't have it yet
-            for (const screenshot of screenshots) {
-                if (!screenshot.extractedText) {
-                    await extractTextFromScreenshot(screenshot);
-                }
+        console.log('Loaded screenshots from Chrome storage:', screenshots.length);
+        
+        // Auto-extract text from screenshots that don't have it yet
+        for (const screenshot of screenshots) {
+            if (!screenshot.extractedText) {
+                await extractTextFromScreenshot(screenshot);
             }
-            
-            updateDisplay();
         }
+        
+        updateDisplay();
     } catch (error) {
         console.error('Failed to load screenshots:', error);
     }
@@ -72,18 +70,24 @@ async function loadScreenshots() {
 function listenForUpdates() {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'screenshotsUpdated') {
-            screenshots = request.screenshots || [];
+            console.log('Received new screenshots notification from background');
             
-            // Auto-extract text from new screenshots
-            for (const screenshot of screenshots) {
-                if (!screenshot.extractedText) {
-                    extractTextFromScreenshot(screenshot);
-                }
-            }
-            
-            updateDisplay();
+            // Reload from Chrome storage to get latest data
+            loadScreenshots();
         }
     });
+}
+
+/**
+ * Save screenshots directly to Chrome storage
+ */
+async function saveScreenshotsToStorage() {
+    try {
+        await chrome.storage.local.set({ screenshots: screenshots });
+        console.log('Screenshots saved to Chrome storage');
+    } catch (error) {
+        console.error('Failed to save screenshots to storage:', error);
+    }
 }
 
 /**
@@ -134,7 +138,7 @@ function createTextElement(screenshot, index) {
         <div class="text-header">
             <div class="text-info">
                 <span class="text-number">#${index + 1}</span>
-                <span class="text-timestamp">${screenshot.date}</span>
+                <span class="text-timestamp">${formatTime(screenshot.timestamp || screenshot.date)}</span>
             </div>
             <div class="text-actions">
                 <button class="action-btn copy-btn" title="Copy text" data-id="${screenshot.id}">📋</button>
@@ -174,10 +178,10 @@ function createTextElement(screenshot, index) {
         }
         
         // Debounce the save operation to prevent excessive calls
-        saveTimeout = setTimeout(() => {
-            updateScreenshotText(screenshot.id, newText);
+        saveTimeout = setTimeout(async () => {
+            await updateScreenshotTextDirect(screenshot.id, newText);
             isUserEditing = false;
-        }, 1000); // Increased to 1 second
+        }, 1000); // Fixed: 1 second instead of 1000000
     });
     
     // Prevent re-renders during focus/interaction
@@ -198,13 +202,13 @@ function createTextElement(screenshot, index) {
     });
     
     // Also save on blur (when user clicks outside)
-    textArea.addEventListener('blur', (e) => {
+    textArea.addEventListener('blur', async (e) => {
         if (saveTimeout) {
             clearTimeout(saveTimeout);
             saveTimeout = undefined;
         }
         const newText = e.target.value;
-        updateScreenshotText(screenshot.id, newText);
+        await updateScreenshotTextDirect(screenshot.id, newText);
         // Delay resetting to prevent immediate re-renders
         setTimeout(() => {
             isUserEditing = false;
@@ -215,17 +219,21 @@ function createTextElement(screenshot, index) {
 }
 
 /**
- * Update screenshot text when user edits it
+ * Update screenshot text directly in Chrome storage
  */
-async function updateScreenshotText(id, newText) {
+async function updateScreenshotTextDirect(id, newText) {
     try {
-        // Save to background script (local data already updated)
-        await chrome.runtime.sendMessage({
-            action: 'updateScreenshotText',
-            id: id,
-            extractedText: newText
-        });
-        
+        // Find and update the screenshot in local array
+        const screenshot = screenshots.find(s => s.id === id);
+        if (screenshot) {
+            screenshot.extractedText = newText;
+            screenshot.lastEdited = new Date().toISOString();
+            
+            // Save directly to Chrome storage
+            await saveScreenshotsToStorage();
+            
+            console.log('Text updated and saved for screenshot:', id);
+        }
     } catch (error) {
         console.error('Failed to update text:', error);
     }
@@ -263,10 +271,14 @@ function downloadText(text, filename) {
  */
 async function deleteText(id) {
     try {
-        await chrome.runtime.sendMessage({
-            action: 'deleteScreenshot',
-            id: id
-        });
+        // Remove from local array
+        screenshots = screenshots.filter(s => s.id !== id);
+        
+        // Save to Chrome storage
+        await saveScreenshotsToStorage();
+        
+        // Update display
+        updateDisplay();
         
         showToast('🗑️ Text deleted');
     } catch (error) {
@@ -284,9 +296,14 @@ async function clearAllText() {
     
     if (confirm('Delete all extracted text? This cannot be undone.')) {
         try {
-            await chrome.runtime.sendMessage({
-                action: 'clearScreenshots'
-            });
+            // Clear the array
+            screenshots = [];
+            
+            // Save to Chrome storage
+            await saveScreenshotsToStorage();
+            
+            // Update display
+            updateDisplay();
             
             showToast('🗑️ All text cleared');
         } catch (error) {
@@ -346,27 +363,31 @@ async function extractTextFromScreenshot(screenshot) {
 }
 
 /**
- * Save extracted text to screenshot data
+ * Save extracted text directly to Chrome storage
  */
 async function saveExtractedText(id, text) {
     try {
-        await chrome.runtime.sendMessage({
-            action: 'updateScreenshotText',
-            id: id,
-            extractedText: text
-        });
-        
-        // Update local data
+        // Find and update the screenshot
         const screenshot = screenshots.find(s => s.id === id);
         if (screenshot) {
             screenshot.extractedText = text;
-            // Only update display if no user is currently editing
+            screenshot.extractedAt = new Date().toISOString();
+            
+            // Save to Chrome storage
+            await saveScreenshotsToStorage();
+            
+            console.log('OCR text saved for screenshot:', id);
+            
+            // Update display if not editing
             if (!isUserEditing) {
                 updateDisplay();
             }
+            
+            showToast('✅ Text extracted successfully!');
         }
     } catch (error) {
         console.error('Failed to save extracted text:', error);
+        showToast('❌ Failed to save extracted text');
     }
 }
 
@@ -411,6 +432,23 @@ function getTextElementById(id) {
         }
     }
     return null;
+}
+
+/**
+ * Format timestamp for display
+ */
+function formatTime(timestamp) {
+    if (!timestamp) return 'Unknown time';
+    
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    } catch (error) {
+        return 'Invalid time';
+    }
 }
 
 /**
