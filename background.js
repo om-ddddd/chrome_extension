@@ -55,6 +55,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return;
   }
   
+  if (request.action === 'reloadScreenshots') {
+    console.log('Reloading screenshots from storage due to popup request');
+    loadScreenshots();
+    sendResponse({ success: true });
+    return;
+  }
+  
   if (request.action === 'log') {
     console.log('OCR Log:', request.data);
   }
@@ -144,9 +151,15 @@ async function loadScreenshots() {
     if (result.screenshots) {
       screenshots = result.screenshots;
       console.log('Loaded screenshots from storage:', screenshots.length, 'items');
+    } else {
+      // If no screenshots in storage, ensure array is empty
+      screenshots = [];
+      console.log('No screenshots found in storage, reset to empty array');
     }
   } catch (error) {
     console.error('Failed to load screenshots:', error);
+    // On error, reset to empty array to prevent stale data
+    screenshots = [];
   }
 }
 

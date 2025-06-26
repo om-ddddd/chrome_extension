@@ -83,10 +83,24 @@ function listenForUpdates() {
  */
 async function saveScreenshotsToStorage() {
     try {
-        await chrome.storage.local.set({ screenshots: screenshots });
-        console.log('Screenshots saved to Chrome storage');
+        // Clone the array to ensure we're saving a fresh copy
+        const screenshotsToSave = [...screenshots];
+        
+        await chrome.storage.local.set({ screenshots: screenshotsToSave });
+        console.log('Screenshots saved to Chrome storage:', screenshotsToSave.length, 'items');
+        
+        // Verify the save operation
+        const verificationResult = await chrome.storage.local.get(['screenshots']);
+        const savedCount = (verificationResult.screenshots || []).length;
+        console.log('Save verification - items in storage:', savedCount);
+        
+        if (savedCount !== screenshotsToSave.length) {
+            console.warn('Mismatch in saved count:', { expected: screenshotsToSave.length, actual: savedCount });
+        }
+        
     } catch (error) {
         console.error('Failed to save screenshots to storage:', error);
+        throw error; // Re-throw to let calling functions handle it
     }
 }
 
@@ -232,6 +246,13 @@ async function updateScreenshotTextDirect(id, newText) {
             // Save directly to Chrome storage
             await saveScreenshotsToStorage();
             
+            // Notify background script to reload its data
+            try {
+                await chrome.runtime.sendMessage({ action: 'reloadScreenshots' });
+            } catch (error) {
+                console.log('Background script notification failed (this is okay):', error);
+            }
+            
             console.log('Text updated and saved for screenshot:', id);
         }
     } catch (error) {
@@ -271,16 +292,71 @@ function downloadText(text, filename) {
  */
 async function deleteText(id) {
     try {
+        console.log('=== DELETE OPERATION START ===');
+        console.log('Deleting text with ID:', id);
+        
+        // Debug storage state before delete
+        await debugStorageState('BEFORE_DELETE');
+        
+        // Find the screenshot to delete (for verification)
+        const screenshotToDelete = screenshots.find(s => s.id === id);
+        if (!screenshotToDelete) {
+            console.error('Screenshot not found with ID:', id);
+            showToast('❌ Text not found');
+            return;
+        }
+        
         // Remove from local array
+        const originalLength = screenshots.length;
         screenshots = screenshots.filter(s => s.id !== id);
+        
+        console.log(`Filtered screenshots from ${originalLength} to ${screenshots.length}`);
+        
+        // Debug storage state after local array update
+        await debugStorageState('AFTER_LOCAL_FILTER');
         
         // Save to Chrome storage
         await saveScreenshotsToStorage();
+        
+        // Debug storage state after save
+        await debugStorageState('AFTER_SAVE');
+        
+        // Verify deletion by reading back from storage immediately
+        const verificationResult = await chrome.storage.local.get(['screenshots']);
+        const storedScreenshots = verificationResult.screenshots || [];
+        console.log('Verified storage after delete:', storedScreenshots.length);
+        
+        // Double-check that the item was actually deleted from storage
+        const stillExists = storedScreenshots.find(s => s.id === id);
+        if (stillExists) {
+            console.error('CRITICAL: Failed to delete from storage - item still exists:', id);
+            showToast('❌ Failed to delete text from storage');
+            return;
+        }
+        
+        // Notify background script to reload its data
+        try {
+            await chrome.runtime.sendMessage({ action: 'reloadScreenshots' });
+            console.log('Background script notified successfully');
+        } catch (error) {
+            console.log('Background script notification failed (this is okay):', error);
+        }
+        
+        // Force reload from storage to ensure we have the latest state
+        console.log('Reloading screenshots from storage after delete...');
+        const reloadResult = await chrome.storage.local.get(['screenshots']);
+        screenshots = reloadResult.screenshots || [];
+        console.log('Reloaded screenshots after delete:', screenshots.length);
+        
+        // Final debug after everything
+        await debugStorageState('FINAL_STATE');
         
         // Update display
         updateDisplay();
         
         showToast('🗑️ Text deleted');
+        console.log('=== DELETE OPERATION COMPLETED ===');
+        console.log('Delete operation completed successfully for ID:', id);
     } catch (error) {
         console.error('Failed to delete text:', error);
         showToast('❌ Failed to delete text');
@@ -296,11 +372,31 @@ async function clearAllText() {
     
     if (confirm('Delete all extracted text? This cannot be undone.')) {
         try {
+            console.log('Clearing all text, current count:', screenshots.length);
+            
             // Clear the array
             screenshots = [];
             
             // Save to Chrome storage
             await saveScreenshotsToStorage();
+            
+            // Notify background script to reload its data
+            try {
+                await chrome.runtime.sendMessage({ action: 'reloadScreenshots' });
+            } catch (error) {
+                console.log('Background script notification failed (this is okay):', error);
+            }
+            
+            // Force reload from storage to ensure we have the latest state
+            console.log('Reloading screenshots from storage after clear...');
+            const reloadResult = await chrome.storage.local.get(['screenshots']);
+            screenshots = reloadResult.screenshots || [];
+            console.log('Reloaded screenshots after clear:', screenshots.length);
+            
+            // Verify clearing by reading back from storage
+            const result = await chrome.storage.local.get(['screenshots']);
+            const storedScreenshots = result.screenshots || [];
+            console.log('Verified storage after clear:', storedScreenshots.length);
             
             // Update display
             updateDisplay();
@@ -470,4 +566,24 @@ function showToast(message) {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+/**
+ * Debug helper to check current storage state
+ */
+async function debugStorageState(context = '') {
+    try {
+        const result = await chrome.storage.local.get(['screenshots']);
+        const storedScreenshots = result.screenshots || [];
+        console.log(`DEBUG ${context}:`, {
+            localArrayLength: screenshots.length,
+            storageArrayLength: storedScreenshots.length,
+            localIds: screenshots.map(s => s.id),
+            storageIds: storedScreenshots.map(s => s.id)
+        });
+        return storedScreenshots;
+    } catch (error) {
+        console.error('Failed to debug storage state:', error);
+        return [];
+    }
 }
