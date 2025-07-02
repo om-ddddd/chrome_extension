@@ -45,11 +45,10 @@ class DraggableButton {
         this.button = document.createElement('div');
         this.button.className = 'draggable-ocr-btn';
         this.button.innerHTML = `
-            <div class="btn-icon">📝</div>
-            <div class="btn-text">OCR</div>
+            <div class="btn-text">Grab Text</div>
             <div class="drag-handle">⋮⋮</div>
         `;
-        this.button.title = 'Drag to move • Click for OCR';
+        this.button.title = 'Drag to move • Click the button';
         
         // Set initial position (top-right corner)
         this.button.style.top = '20px';
@@ -194,7 +193,6 @@ class DraggableButton {
     startScreenCapture() {
         // Change button appearance
         this.button.innerHTML = `
-            <div class="btn-icon">📸</div>
             <div class="btn-text">Select</div>
             <div class="drag-handle">⋮⋮</div>
         `;
@@ -202,7 +200,7 @@ class DraggableButton {
         
         // Create overlay for area selection
         this.createSelectionOverlay();
-        this.showNotification('🎯 Click and drag to select area for screenshot');
+        this.showNotification('Click and drag to select area for screenshot');
     }
 
     /**
@@ -304,7 +302,7 @@ class DraggableButton {
      */
     async captureSelectedArea(bounds) {
         try {
-            this.showNotification('📸 Capturing selected area...');
+            this.showNotification(' Capturing selected area...');
             
             // Use html2canvas to capture the selected area
             const canvas = await this.captureScreenshot(bounds);

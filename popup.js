@@ -155,9 +155,9 @@ function createTextElement(screenshot, index) {
                 <span class="text-timestamp">${formatTime(screenshot.timestamp || screenshot.date)}</span>
             </div>
             <div class="text-actions">
-                <button class="action-btn copy-btn" title="Copy text" data-id="${screenshot.id}">📋</button>
-                <button class="action-btn save-btn" title="Save text" data-id="${screenshot.id}">💾</button>
-                <button class="action-btn delete-btn" title="Delete text" data-id="${screenshot.id}">🗑️</button>
+                <button class="action-btn copy-btn" title="Copy text" data-id="${screenshot.id}">Copy</button>
+                <button class="action-btn save-btn" title="Save text" data-id="${screenshot.id}">Save</button>
+                <button class="action-btn delete-btn" title="Delete text" data-id="${screenshot.id}">Delete</button>
             </div>
         </div>
         <div class="text-content">
@@ -266,10 +266,10 @@ async function updateScreenshotTextDirect(id, newText) {
 async function copyText(text) {
     try {
         await navigator.clipboard.writeText(text);
-        showToast('📋 Text copied to clipboard!');
+        showToast('Text copied to clipboard!');
     } catch (error) {
         console.error('Failed to copy text:', error);
-        showToast('❌ Failed to copy text');
+        showToast('Failed to copy text');
     }
 }
 
@@ -284,7 +284,7 @@ function downloadText(text, filename) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('💾 Text file downloaded!');
+    showToast('Text file downloaded!');
 }
 
 /**
@@ -354,7 +354,7 @@ async function deleteText(id) {
         // Update display
         updateDisplay();
         
-        showToast('🗑️ Text deleted');
+        showToast('Text deleted');
         console.log('=== DELETE OPERATION COMPLETED ===');
         console.log('Delete operation completed successfully for ID:', id);
     } catch (error) {
@@ -401,7 +401,7 @@ async function clearAllText() {
             // Update display
             updateDisplay();
             
-            showToast('🗑️ All text cleared');
+            showToast('All text cleared');
         } catch (error) {
             console.error('Failed to clear text:', error);
             showToast('❌ Failed to clear text');
